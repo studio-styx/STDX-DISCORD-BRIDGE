@@ -133,7 +133,8 @@ async function userAccessToken(code: string): Promise<FetchResult<RestOAuth2>> {
     });
 
     if (!response.ok) {
-        return { success: false, error: "Falha ao obter o token de acesso.", status: response.status };
+        const responseString = JSON.stringify(await response.json());
+        return { success: false, error: "Falha ao obter o token de acesso: " + responseString, status: response.status };
     }
 
     const data = await response.json() as RestOAuth2;
