@@ -205,4 +205,5 @@ app.get("/auth/redirect", async (req, reply) => {
 });
 
 const proxy = awsLambdaFastify(app);
+
 export default proxy;
