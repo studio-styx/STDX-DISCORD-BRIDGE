@@ -210,4 +210,13 @@ app.get("/api/auth/redirect", async (req, reply) => {
 
 const proxy = awsLambdaFastify(app);
 
-export default proxy;
+let isReady = false;
+
+export default async function handler(req: any, res: any) {
+    if (!isReady) {
+        await app.ready();
+        isReady = true;
+    }
+    
+    app.server.emit('request', req, res);
+}
