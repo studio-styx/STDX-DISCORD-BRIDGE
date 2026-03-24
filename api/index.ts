@@ -158,10 +158,14 @@ async function userAccessToken(code: string): Promise<FetchResult<RestOAuth2>> {
 }
 
 app.get("/", async (request, reply) => {
+    return { status: "online", message: "API funcionando!" };
+});
+
+app.get("/api", async (request, reply) => {
     return { hello: "world" };
 });
 
-app.get("/auth/redirect", async (req, reply) => {
+app.get("/api/auth/redirect", async (req, reply) => {
     const { code } = req.query as { code?: string };
     
     reply.type("text/html; charset=utf-8");
