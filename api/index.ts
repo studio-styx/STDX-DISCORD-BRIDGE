@@ -1,19 +1,11 @@
 import fastify from "fastify";
 import { Redis } from "@upstash/redis";
-import awsLambdaFastify from "@fastify/aws-lambda";
 
-const app = fastify();
+const app = fastify({ logger: true });
 
-type FetchResult<T> = 
-| {
-    success: true,
-    data: T
-}
-| {
-    success: false,
-    error: string,
-    status: number
-}
+type FetchResult<T> =
+    | { success: true; data: T }
+    | { success: false; error: string; status: number };
 
 type RestOAuth2 = {
     access_token: string;
@@ -21,7 +13,7 @@ type RestOAuth2 = {
     expires_in: number;
     token_type: string;
     scope: string;
-}
+};
 
 type DiscordUser = {
     id: string;
@@ -34,7 +26,7 @@ type DiscordUser = {
     verified: boolean;
     premium_type: number;
     locale: string;
-}
+};
 
 const redis = new Redis({
     url: process.env.REDIS_URL as string,
@@ -132,33 +124,24 @@ async function userAccessToken(code: string): Promise<FetchResult<RestOAuth2>> {
         redirect_uri: process.env.REDIRECT_URI as string,
         client_id: process.env.CLIENT_ID as string,
         client_secret: process.env.CLIENT_SECRET as string,
-    }
+    };
 
     const response = await fetch("https://discord.com/api/v10/oauth2/token", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams(fetchBody).toString(),
     });
 
     if (!response.ok) {
-        return {
-            success: false,
-            error: "Falha ao obter o token de acesso.",
-            status: response.status,
-        };
+        return { success: false, error: "Falha ao obter o token de acesso.", status: response.status };
     }
 
     const data = await response.json() as RestOAuth2;
-    return {
-        success: true,
-        data,
-    };
+    return { success: true, data };
 }
 
 app.get("/", async (request, reply) => {
-    return { status: "online", message: "API funcionando!" };
+    return { status: "online", message: "API funcionando na Vercel!" };
 });
 
 app.get("/api", async (request, reply) => {
@@ -167,7 +150,7 @@ app.get("/api", async (request, reply) => {
 
 app.get("/api/auth/redirect", async (req, reply) => {
     const { code } = req.query as { code?: string };
-    
+
     reply.type("text/html; charset=utf-8");
 
     if (!code) {
@@ -184,9 +167,7 @@ app.get("/api/auth/redirect", async (req, reply) => {
     }
 
     const userResult = await fetch("https://discord.com/api/v10/users/@me", {
-        headers: {
-            Authorization: `Bearer ${tokenResult.data.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${tokenResult.data.access_token}` },
     });
 
     if (!userResult.ok) {
@@ -196,7 +177,7 @@ app.get("/api/auth/redirect", async (req, reply) => {
     }
 
     const userData = await userResult.json() as DiscordUser;
-    
+
     const payload = {
         id: userData.id,
         email: userData.email,
@@ -208,8 +189,6 @@ app.get("/api/auth/redirect", async (req, reply) => {
     );
 });
 
-const proxy = awsLambdaFastify(app);
-
 let isReady = false;
 
 export default async function handler(req: any, res: any) {
@@ -217,6 +196,6 @@ export default async function handler(req: any, res: any) {
         await app.ready();
         isReady = true;
     }
-    
+
     app.server.emit('request', req, res);
 }
