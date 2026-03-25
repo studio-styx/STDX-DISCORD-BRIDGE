@@ -150,7 +150,7 @@ app.get("/api", async (request, reply) => {
 });
 
 app.get("/api/auth/redirect", async (req, reply) => {
-    const { code } = req.query as { code?: string };
+    const { code, state } = req.query as { code?: string, state?: string };
 
     reply.type("text/html; charset=utf-8");
 
@@ -182,6 +182,7 @@ app.get("/api/auth/redirect", async (req, reply) => {
     const payload = {
         id: userData.id,
         email: userData.email,
+        interaction_token: state,
     };
     await redis.publish("auth:updates", JSON.stringify(payload));
 
