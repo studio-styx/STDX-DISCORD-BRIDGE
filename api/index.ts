@@ -34,8 +34,15 @@ const redis = new Redis({
 });
 
 function renderPage(type: "success" | "error", title: string, description: string, details?: string) {
-    const bgColor = type === "success" ? "#43b581" : "#f04747";
-    const icon = type === "success" ? "✅" : "❌";
+    const isSuccess = type === "success";
+
+    const primaryColor = isSuccess ? "#10B981" : "#EF4444";
+    const bgColor = "#0f172a";
+    const cardColor = "#1e293b";
+
+    const iconSvg = isSuccess
+        ? `<svg xmlns="http://www.w3.org/2000/svg" class="icon success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" class="icon error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
 
     return `
     <!DOCTYPE html>
@@ -44,73 +51,135 @@ function renderPage(type: "success" | "error", title: string, description: strin
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${title}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
         <style>
+            :root {
+                --primary: ${primaryColor};
+                --bg: ${bgColor};
+                --card: ${cardColor};
+                --text-main: #f8fafc;
+                --text-muted: #94a3b8;
+                --border: #334155;
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
             body {
-                background-color: #36393f; /* Fundo do Discord */
-                color: #dcddde;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background-color: var(--bg);
+                color: var(--text-main);
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                height: 100vh;
-                margin: 0;
+                min-height: 100vh;
+                padding: 20px;
             }
+
             .card {
-                background-color: #2f3136;
-                padding: 40px;
-                border-radius: 8px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                background-color: var(--card);
+                padding: 40px 32px;
+                border-radius: 16px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
                 text-align: center;
-                max-width: 400px;
-                width: 90%;
-                border-top: 5px solid ${bgColor};
+                max-width: 420px;
+                width: 100%;
+                border: 1px solid var(--border);
+                border-top: 4px solid var(--primary);
+                
+                /* Animação de entrada */
+                animation: slideUp 0.5s ease-out forwards;
+                opacity: 0;
+                transform: translateY(20px);
             }
-            h1 {
-                color: #ffffff;
-                margin-bottom: 10px;
-                font-size: 24px;
+
+            @keyframes slideUp {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
+
+            .icon-container {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 24px;
+            }
+
             .icon {
-                font-size: 48px;
-                margin-bottom: 20px;
+                width: 64px;
+                height: 64px;
+                color: var(--primary);
+                /* Efeito de brilho suave na cor do ícone */
+                filter: drop-shadow(0 0 12px ${primaryColor}40);
             }
-            p {
-                font-size: 16px;
-                line-height: 1.5;
+
+            h1 {
+                font-size: 24px;
+                font-weight: 600;
+                margin-bottom: 12px;
+                letter-spacing: -0.025em;
             }
+
+            .description {
+                font-size: 15px;
+                color: var(--text-muted);
+                line-height: 1.6;
+                margin-bottom: 24px;
+            }
+
             .details {
-                margin-top: 20px;
-                padding: 10px;
-                background-color: #202225;
-                border-radius: 4px;
-                font-family: monospace;
-                color: #ed4245;
-                font-size: 14px;
+                margin-bottom: 24px;
+                padding: 16px;
+                background-color: rgba(0, 0, 0, 0.25);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                color: #e2e8f0;
+                font-size: 13px;
+                text-align: left;
                 word-break: break-all;
+                max-height: 150px;
+                overflow-y: auto;
             }
-            button {
-                margin-top: 25px;
-                background-color: #5865F2; /* Blurple do Discord */
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                font-size: 16px;
-                border-radius: 4px;
-                cursor: pointer;
-                transition: background-color 0.2s;
+
+            /* Estilização da instrução de saída */
+            .close-instruction {
+                margin-top: 8px;
+                padding-top: 24px;
+                border-top: 1px solid var(--border);
+                font-size: 14px;
+                color: var(--text-muted);
+                font-weight: 500;
             }
-            button:hover {
-                background-color: #4752c4;
+
+            .close-instruction span {
+                display: block;
+                margin-top: 4px;
+                font-size: 12px;
+                opacity: 0.7;
             }
         </style>
     </head>
     <body>
         <div class="card">
-            <div class="icon">${icon}</div>
+            <div class="icon-container">
+                ${iconSvg}
+            </div>
             <h1>${title}</h1>
-            <p>${description}</p>
+            <p class="description">${description}</p>
+            
             ${details ? `<div class="details">${details}</div>` : ''}
-            <button onclick="window.close()">Fechar esta aba</button>
+            
+            <div class="close-instruction">
+                Você já pode fechar esta aba.
+                <span>${isSuccess ? 'Ação concluída com sucesso.' : 'Verifique os detalhes e tente novamente.'}</span>
+            </div>
         </div>
     </body>
     </html>
